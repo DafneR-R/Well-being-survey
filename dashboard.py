@@ -297,7 +297,7 @@ def load_data() -> pd.DataFrame:
     return df
 
 
-df = load_data(DATA_FILE)
+df = load_data()
 if df.empty:
     st.error(f"Can't find/read `{DATA_FILE}`. Make sure the file is in the same folder as `dashboard.py`.")
     st.stop()
@@ -751,3 +751,4 @@ with tab_export:
             mime="application/pdf",
             type="primary",
         )
+
