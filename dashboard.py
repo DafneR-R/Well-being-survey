@@ -10,6 +10,9 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 
+import gspread
+from google.oauth2.service_account import Credentials
+
 DATA_FILE = "responses.csv"
 
 MSC_YELLOW = "#F8DE8D"
@@ -19,7 +22,6 @@ MSC_GRAY = "#E6E6E6"
 MSC_WARM_GREY = "#8B8178"
 TEXT_COLOR = "#8C7F72"
 BLACK = "#000000"
-
 MSC_LIGHT_BLUE = "#8E9FBC"
 MSC_BLUE = "#135193"
 MSC_DARK_BLUE = "#1B365D"
@@ -41,6 +43,25 @@ CATEGORIES = {
     "Work-Life Balance": ["q10", "q11", "q12"],
     "Growth & Recognition": ["q13", "q14", "q15"],
 }
+
+@st.cache_data(ttl=20)
+def load_data():
+    creds_info = st.secrets["gcp_service_account"]
+    scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+    creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
+    client = gspread.authorize(creds)
+
+    sheet_id = st.secrets["sheets"]["spreadsheet_id"]
+    ws_name = st.secrets["sheets"]["worksheet_name"]
+    ws = client.open_by_key(sheet_id).worksheet(ws_name)
+
+    values = ws.get_all_values()
+    if len(values) < 2:
+        return pd.DataFrame()
+
+    header = values[0]
+    rows = values[1:]
+    return pd.DataFrame(rows, columns=header)
 
 st.set_page_config(page_title="MSC Latvia – Wellbeing Survey Dashboard", layout="wide")
 
@@ -240,23 +261,41 @@ alt.themes.enable("msc_theme")
 top_left, top_right = st.columns([0.78, 0.22], vertical_alignment="center")
 with top_left:
     st.title("Wellbeing Survey Dashboard")
-    st.caption("MSC Latvia — interactive overview from `responses.csv`")
+    st.caption("MSC Latvia Internal Feedback — interactive overview")
 with top_right:
     lp = _logo_path()
     if lp:
         st.image(lp, use_container_width=True)
 
-@st.cache_data
-def load_data(path: str) -> pd.DataFrame:
-    if not os.path.exists(path):
+@st.cache_data(ttl=20)
+def load_data() -> pd.DataFrame:
+    creds_info = st.secrets["gcp_service_account"]
+    scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+    creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
+    client = gspread.authorize(creds)
+
+    sheet_id = st.secrets["sheets"]["spreadsheet_id"]
+    ws_name = st.secrets["sheets"]["worksheet_name"]
+    ws = client.open_by_key(sheet_id).worksheet(ws_name)
+
+    values = ws.get_all_values()
+    if len(values) < 2:
         return pd.DataFrame()
-    df = pd.read_csv(path)
-    df.columns = [c.strip() for c in df.columns]
+
+    header = [c.strip() for c in values[0]]
+    rows = values[1:]
+    df = pd.DataFrame(rows, columns=header)
+
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-    if "survey_date" in df.columns:
-        df["survey_date"] = pd.to_datetime(df["survey_date"], errors="coerce").dt.date
+
+    for i in range(1, 16):
+        col = f"q{i}"
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
     return df
+
 
 df = load_data(DATA_FILE)
 if df.empty:
