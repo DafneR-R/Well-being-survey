@@ -2,9 +2,26 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+import gspread
+from google.oauth2.service_account import Credentials
+
 
 DATA_FILE = "responses.csv"
 LOGO_PATH = "assets/msc_logo.png"
+
+def get_ws():
+    creds_info = st.secrets["gcp_service_account"]
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+    creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
+    client = gspread.authorize(creds)
+    sheet_id = st.secrets["sheets"]["spreadsheet_id"]
+    ws_name = st.secrets["sheets"]["worksheet_name"]
+    return client.open_by_key(sheet_id).worksheet(ws_name)
+
+def append_to_sheet(timestamp, department, answers):
+    ws = get_ws()
+    row = [timestamp, department] + list(answers)
+    ws.append_row(row, value_input_option="USER_ENTERED")
 
 if "submitted" not in st.session_state:
     st.session_state["submitted"] = False
@@ -192,7 +209,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 4. LOGO
 col1, col2, col3 = st.columns([1, 1, 1])
 with col2:
     if os.path.exists(LOGO_PATH):
@@ -214,15 +230,25 @@ if st.session_state["submitted"]:
     """, unsafe_allow_html=True)
     st.stop()
 
-def load_data():
-    if os.path.exists(DATA_FILE):
-        return pd.read_csv(DATA_FILE)
-    return pd.DataFrame()
+def get_ws():
+    creds_info = st.secrets["gcp_service_account"]
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+    creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
+    client = gspread.authorize(creds)
+    sheet_id = st.secrets["sheets"]["spreadsheet_id"]
+    ws_name = st.secrets["sheets"]["worksheet_name"]
+    return client.open_by_key(sheet_id).worksheet(ws_name)
 
 def save_response(row: dict):
-    df = load_data()
-    df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
-    df.to_csv(DATA_FILE, index=False)
+    ws = get_ws()
+    answers = [
+        row["q1"], row["q2"], row["q3"], row["q4"], row["q5"],
+        row["q6"], row["q7"], row["q8"], row["q9"], row["q10"],
+        row["q11"], row["q12"], row["q13"], row["q14"], row["q15"]
+    ]
+    values = [row["timestamp"], row["department"]] + answers
+    ws.append_row(values, value_input_option="USER_ENTERED")
+
 
 def refined_question(number, text, key):
     st.markdown(f"""
@@ -278,7 +304,6 @@ q15 = refined_question(15, "Overall, I am satisfied working at MSC Latvia.", "q1
 error_msg = st.empty()
 
 if st.button("Submit Survey"):
-    # jāpārbauda, vai izvēlēta nodaļa
     if dept == dept_placeholder:
         error_msg.markdown(
             '<p class="required-error">Please select your department before submitting.</p>',
