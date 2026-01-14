@@ -72,10 +72,25 @@ st.markdown(
 
 html, body, [class*="st-"], .stApp {{
   font-family: 'Archivo', sans-serif !important;
+  font-weight: 900 !important;
   color: {TEXT_COLOR};
 }}
 
-h1, h2, h3 {{
+p, div{{
+  font-family: 'Archivo', sans-serif !important;
+  font-weight: 900 !important;
+}}
+
+span[data-testid="stIconMaterial"] {{
+  font-family: 'Material Symbols Rounded' !important;
+}}
+
+div[data-testid="stDataFrame"] * {{
+  font-family: 'Archivo', sans-serif !important;
+}}
+
+h1, h2, h3, h4 {{
+  font-family: 'Archivo', sans-serif !important;
   font-weight: 900 !important;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -232,6 +247,7 @@ def _logo_path() -> str | None:
             return p
     return None
 
+@alt.theme.register("msc_theme", enable=True)
 def _msc_altair_theme():
     return {
         "config": {
@@ -254,9 +270,6 @@ def _msc_altair_theme():
             "view": {"stroke": "transparent"},
         }
     }
-
-alt.themes.register("msc_theme", _msc_altair_theme)
-alt.themes.enable("msc_theme")
 
 top_left, top_right = st.columns([0.78, 0.22], vertical_alignment="center")
 with top_left:
@@ -411,6 +424,7 @@ with tab_overview:
         cat_chart = (
             alt.Chart(cat_avg)
             .mark_bar(color=MSC_YELLOW, cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+            .configure_axis(labelFont="Archivo", titleFont="Archivo", labelFontWeight=900, titleFontWeight=900)
             .encode(
                 x=alt.X("Category:N", sort="-y", title="Category"),
                 y=alt.Y("Average:Q", title="Average (1–10)"),
@@ -465,6 +479,7 @@ with tab_question:
                 bar = (
                     alt.Chart(by_dept_disp)
                     .mark_bar(color=MSC_YELLOW, cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+                    .configure_axis(labelFont="Archivo", titleFont="Archivo", labelFontWeight=900, titleFontWeight=900)
                     .encode(
                         x=alt.X("Department:N", sort="-y", title="Department"),
                         y=alt.Y("mean:Q", title="Average"),
@@ -490,6 +505,7 @@ with tab_question:
             hist = (
                 alt.Chart(hist_df)
                 .mark_bar(color=MSC_YELLOW, cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+                .configure_axis(labelFont="Archivo", titleFont="Archivo", labelFontWeight=900, titleFontWeight=900)
                 .encode(
                     x=alt.X("Score:O", title="Score (1–10)"),
                     y=alt.Y("count():Q", title="Count"),
@@ -537,6 +553,7 @@ with tab_dept:
                 chart = (
                     alt.Chart(comp_disp)
                     .mark_bar(color=MSC_YELLOW, cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+                    .configure_axis(labelFont="Archivo", titleFont="Archivo", labelFontWeight=900, titleFontWeight=900)
                     .encode(
                         x=alt.X("Department:N", sort="-y", title="Department"),
                         y=alt.Y("Overall Index:Q", title="Average Overall Index"),
@@ -559,6 +576,7 @@ with tab_dept:
                 chart = (
                     alt.Chart(dept_cat_melt)
                     .mark_bar(color=MSC_YELLOW, cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+                    .configure_axis(labelFont="Archivo", titleFont="Archivo", labelFontWeight=900, titleFontWeight=900)
                     .encode(
                         x=alt.X("Department:N", title="Department"),
                         y=alt.Y("Average:Q", title="Average (1–10)"),
@@ -600,8 +618,8 @@ with tab_heatmap:
                 alt.Chart(heat_disp)
                 .mark_rect(stroke="#FFFFFF", strokeWidth=0.8, cornerRadius=6)
                 .encode(
-                    x=alt.X("Question:N", title="Question", sort=question_cols, axis=alt.Axis(labelAngle=0, labelPadding=10)),
-                    y=alt.Y("Department:N", title="Department", sort=COMPANY_DEPARTMENTS, axis=alt.Axis(labelPadding=10)),
+                    x=alt.X("Question:N", title="Question", sort=question_cols, axis=alt.Axis(labelAngle=0, labelPadding=10, labelFont="Archivo", labelFontWeight=900, titleFont="Archivo", titleFontWeight=900)),
+                    y=alt.Y("Department:N", title="Department", sort=COMPANY_DEPARTMENTS, axis=alt.Axis(labelPadding=10, labelFont="Archivo", labelFontWeight=900, titleFont="Archivo", titleFontWeight=900)),
                     color=alt.Color(
                         "Score:Q",
                         title="Average",
@@ -751,4 +769,3 @@ with tab_export:
             mime="application/pdf",
             type="primary",
         )
-
